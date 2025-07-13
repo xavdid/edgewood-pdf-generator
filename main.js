@@ -1,7 +1,10 @@
 import { readFileSync } from "node:fs";
 import puppeteer from "puppeteer";
 
-const today = new Date().toISOString().slice(0, 10);
+// this assumes the survey is always sent the day after
+const date = new Date();
+date.setDate(date.getDate() - 1);
+const yesterday = date.toISOString().slice(0, 10);
 
 // put this in a funciton so that we have a better chance of actually exiting successfully
 const makePdf = async (url) => {
@@ -23,7 +26,7 @@ const makePdf = async (url) => {
   console.log("saving");
   // Saves the PDF to hn.pdf.
   await page.pdf({
-    path: `Wildflower Survey ${today}.pdf`,
+    path: `Wildflower Survey ${yesterday}.pdf`,
   });
   console.log("  saved!");
 

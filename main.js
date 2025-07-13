@@ -23,7 +23,7 @@ const makePdf = async (url) => {
   console.log("saving");
   // Saves the PDF to hn.pdf.
   await page.pdf({
-    path: `${today} - Wildflower Report.pdf`,
+    path: `Wildflower Survey ${today}.pdf`,
   });
   console.log("  saved!");
 

@@ -8,33 +8,71 @@ const yesterday = date.toISOString().slice(0, 10);
 
 // put this in a funciton so that we have a better chance of actually exiting successfully
 const makePdf = async (url) => {
-  console.log("launching");
+  process.stdout.write("  launching...");
   // non-headless is maybe marginally more reliable?
   const browser = await puppeteer.launch({ headless: false });
-  console.log("  launched!");
+  console.log(" launched!");
 
-  console.log("opening new page!");
-  const page = await browser.newPage();
-  console.log("  opened!");
+  try {
+    process.stdout.write("  opening new page...");
+    const page = await browser.newPage();
+    console.log(" opened!");
 
-  console.log("navigating");
-  await page.goto(url, {
-    waitUntil: "networkidle2",
-  });
-  console.log("  navigated!");
+    process.stdout.write("  navigating...");
+    await page.goto(url);
+    console.log(" navigated!");
 
-  console.log("saving");
-  // Saves the PDF to hn.pdf.
-  await page.pdf({
-    path: `Wildflower Survey ${yesterday}.pdf`,
-  });
-  console.log("  saved!");
+    // make page edits: https://stackoverflow.com/questions/50867065/puppeteer-removing-elements-by-class
 
-  console.log("saving");
+    process.stdout.write("  removing elements...");
+    // remove the share bar at the top
+    await page.$eval(".shr-bar", (el) => el.remove());
 
-  console.log("closing");
-  await browser.close();
-  console.log("  closed!");
+    // remove the unsubscribe & logo stuff
+    await page.$$eval(".shell_panel-cell--footer", (els) =>
+      els.forEach((el) => el.remove())
+    );
+
+    // remove some rows from the bottom of the template
+    const shell = await page.$(".shell > table > tbody > tr");
+    const rows = await shell.$$("table.layout");
+
+    // the things we don't want are the last, 2nd to last, and 4th to last elements.
+    // the array indexes don't update when rows are deleted (since we're dispatching calls) so no need for fancy index math
+    for (const i of [1, 2, 4]) {
+      const el = rows[rows.length - i];
+      await el.evaluate((el) => el.remove());
+    }
+    console.log(" removed!");
+
+    // if we want to avoid breaking within a paragraph, we can add
+
+    // p {
+    //   page-break-inside: avoid;
+    // }
+
+    // in style somwhere. That avoids breaking a paragraph. Each email "row" is a full `table` so we can target that with `page-break-inside` instead to avoid breakage even more aggresively
+
+    process.stdout.write("saving...");
+    // Saves the PDF to hn.pdf.
+    await page.pdf({
+      path: `Wildflower Survey ${yesterday}.pdf`,
+      margin: {
+        top: 38, // pixels, apparently? chrome defaluts to .39" and this is about equivalent?
+        bottom: 38,
+        left: 38,
+        right: 38,
+      },
+    });
+    console.log(" saved!");
+  } catch (e) {
+    console.log(e);
+    throw e;
+  } finally {
+    process.stdout.write("  closing...");
+    await browser.close();
+    console.log(" closed!");
+  }
 };
 
 const filename = process.argv[2];
@@ -42,14 +80,20 @@ if (!filename) {
   throw new Error("MISSING FILENAME");
 }
 
-console.log(filename);
 const url = readFileSync(filename, "utf-8").trim();
 
 for (let index = 0; index < 5; index++) {
   try {
+    console.log(`\nbeginning attempt #${index + 1}`);
     await makePdf(url);
     break;
-  } catch {
-    // try, try again
+  } catch (e) {
+    console.log(`  failed! ${e}`);
+    // wait 2 seconds, then try, try again
+    await new Promise((resolve) => {
+      setTimeout(() => {
+        resolve();
+      }, 2000);
+    });
   }
 }

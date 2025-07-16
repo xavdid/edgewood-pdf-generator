@@ -1,10 +1,13 @@
 import { readFileSync } from "node:fs";
 import puppeteer from "puppeteer";
 
-// this assumes the survey is always sent the day after
+// this assumes the survey is always sent the day after it's taken
 const date = new Date();
 date.setDate(date.getDate() - 1);
-const yesterday = date.toISOString().slice(0, 10);
+// 'sv' is the swedish format, which is iso! but it doesn't convert to UTC first, so this is preferred to using toIsoString()
+const yesterday = date.toLocaleDateString("sv", {
+  timeZone: "America/Los_Angeles",
+});
 
 // put this in a funciton so that we have a better chance of actually exiting successfully
 const makePdf = async (url) => {

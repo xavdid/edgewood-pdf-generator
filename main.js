@@ -40,10 +40,11 @@ const makePdf = async (url) => {
     const shell = await page.$(".shell > table > tbody > tr");
     const rows = await shell.$$("table.layout");
 
-    // the things we don't want are the last, 2nd to last, and 4th to last elements.
-    // the array indexes don't update when rows are deleted (since we're dispatching calls) so no need for fancy index math
-    for (const i of [1, 2, 4]) {
-      const el = rows[rows.length - i];
+    // We want to remove the last 5 items (logos, table, etc)
+    // these are 0-indexed against the end of the user-generated content
+    // the array indexes don't update when rows are deleted (since we're dispatching calls to the dom) so no need for fancy index math
+    for (const i of [0, 1, 2, 3, 4]) {
+      const el = rows[rows.length - 1 - i];
       await el.evaluate((el) => el.remove());
     }
     console.log(" removed!");

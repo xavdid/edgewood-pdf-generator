@@ -81,10 +81,15 @@ const makePdf = async (url) => {
 
 const filename = process.argv[2];
 if (!filename) {
-  throw new Error("MISSING FILENAME");
+  throw new Error(
+    "Program needs 1 arg: either a conta.cc url or the path to a file that url inside it"
+  );
 }
 
-const url = readFileSync(filename, "utf-8").trim();
+// the arg can be either the url itself or a file that has the url inside
+const url = filename.startsWith("https://")
+  ? filename
+  : readFileSync(filename, "utf-8").trim();
 
 for (let index = 0; index < 5; index++) {
   try {

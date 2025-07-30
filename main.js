@@ -4,7 +4,8 @@ import puppeteer from "puppeteer";
 // this assumes the survey is always sent the day after it's taken
 const date = new Date();
 date.setDate(date.getDate() - 1);
-// 'sv' is the swedish format, which is iso! but it doesn't convert to UTC first, so this is preferred to using toIsoString()
+// 'sv' is the swedish format, which is iso!
+// but toIsoString() doesn't convert to UTC first, so this approach is preferred to using toIsoString() directly
 const yesterday = date.toLocaleDateString("sv", {
   timeZone: "America/Los_Angeles",
 });
@@ -43,7 +44,7 @@ const makePdf = async (url) => {
     // We want to remove the last 5 items (logos, table, etc)
     // these are 0-indexed against the end of the user-generated content
     // the array indexes don't update when rows are deleted (since we're dispatching calls to the dom) so no need for fancy index math
-    for (const i of [0, 1, 2, 3, 4]) {
+    for (const i of [0, 1, 2, 3]) {
       const el = rows[rows.length - 1 - i];
       await el.evaluate((el) => el.remove());
     }
@@ -57,7 +58,7 @@ const makePdf = async (url) => {
 
     // in style somwhere. That avoids breaking a paragraph. Each email "row" is a full `table` so we can target that with `page-break-inside` instead to avoid breakage even more aggresively
 
-    process.stdout.write("saving...");
+    process.stdout.write("  saving...");
     // Saves the PDF to hn.pdf.
     await page.pdf({
       path: `Wildflower Survey ${yesterday}.pdf`,
@@ -82,7 +83,7 @@ const makePdf = async (url) => {
 const filename = process.argv[2];
 if (!filename) {
   throw new Error(
-    "Program needs 1 arg: either a conta.cc url or the path to a file that url inside it"
+    "Program needs 1 arg: either an https://conta.cc url or the path to a file that url inside it"
   );
 }
 
